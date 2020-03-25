@@ -32,7 +32,8 @@ def tranlateLine(line,lang):
                         if chr1 is '':
                             chr1= line[i]
             if chr1 is '' and chr2 is '':
-                chr1= line[i]
+                if i < len(line):
+                    chr1= line[i]
                 if j < len(line):
                     chr2= line[j]
             #Pokrivene situacije \uxxxChar Char\uxxx \uxxx\uxxx \\ \\uxxx \Char CharChar...
@@ -52,18 +53,30 @@ def tranlateLine(line,lang):
         return trLine
 
 lang= 'sr'
-infile= open('test.txt','r')
+infile= open('messages_sr.properties','r')
 outFile= open('testout.txt','w')
 
+flag = True
+beforHadEq= False
 for line in infile:
     pos = re.search(r"[=]", line)
     if pos is not None:
+        beforHadEq= True
+        flag= False
         outFile.write(line[0:pos.end()])
         outFile.write(tranlateLine(line[pos.end():-1],lang))
-    else:
-        outFile.write(line)
-    outFile.write('\n')
+        outFile.write('\n')
+        if re.search(r'[\\]{1}$',line) is not None:
+            flag= True
+            beforHadEq= False
 
+    elif flag:
+        flag= False
+        outFile.write(tranlateLine(line,lang) + '\n')
+        if re.search(r'[\\]{1}$',line):
+            flag= True
+    elif beforHadEq:
+        outFile.write('\n')
 
 
 
@@ -71,8 +84,12 @@ for line in infile:
 # line2= "Džak" #OK
 # line3= r"D\\u017Eak"
 # line4= "žakd"
-# line5= r"D\\u017ED\\u017E"
-# print(tranlateLine(line5 ,lang))
+# line5= r"\u0064\u017ED\\u017E"
+# line6= "Sistem \u0107e generisati \u0161ifru i poslati je na va\u0161u \imejl adresu."
+
+# line7= "Odaberi dodatne <br /> menad\u017Eere, ukoliko je \"
+# line8= ' Test generator ne mo\u017Ee biti primenjen u granjanju \\'
+# print(tranlateLine(line8 ,lang))
 
 infile.close()
 outFile.close()
