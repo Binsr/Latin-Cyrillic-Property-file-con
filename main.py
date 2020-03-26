@@ -1,5 +1,6 @@
 import transliterate as tr
 import re
+lang= 'sr'
 
 def isUnicode(chr):
     try:
@@ -22,32 +23,33 @@ def translateLine(line,lang):
         i+=1
     return tr.translit(trLine,lang)
 
-lang= 'sr'
+
 infile= open('messages_sr.properties','r')
 outFile= open('testout_sr_cir_properties','w')
 
-flag = True
-beforHadEq= False
+flag= False #Kontrolise razmak izmedju redova
 for line in infile:
-    pos = re.search(r"[=]", line)
-    if pos is not None:
-        beforHadEq= True
-        flag= False
-        outFile.write(line[0:pos.end()])
-        outFile.write(str((translateLine(line[pos.end():-1],lang)).encode('unicode_escape')))
-        outFile.write('\n')
-        if re.search(r'[\\]{1}$',line) is not None:
-            flag= True
-            beforHadEq= False
+    pos = re.search(r"[=]",line)
+    if re.search(r"^#.*",line) is not None:
+        outFile.write(translateLine(line,lang)) #Uklanja razmak izmedju 2 linije istog komentara
+        comFlag= True
+        continue
 
-    elif flag:
+    if pos is not None:
+        flag= True
+        outFile.write(line[0:pos.end()])
+        outFile.write(translateLine(line[pos.end():-1],lang) + '\n')
+    elif re.search(r"^\s*$",line) is not None and len(line) > 0:
+        if flag:
+            outFile.write('\n')
         flag= False
-        outFile.write(str((translateLine(line,lang)).encode('unicode_escape')))
-        outFile.write('\n')
-        if re.search(r'[\\]{1}$',line):
-            flag= True
-    elif beforHadEq:
-        outFile.write('\n')
+        continue
+    else:
+        outFile.write(translateLine(line,lang)+ '\n')
+        flag= False
+
+    # if re.search(r'[\\]$',line) is None:
+    #     outFile.write('\n')
 
 infile.close()
 outFile.close()
