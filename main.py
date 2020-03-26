@@ -2,6 +2,8 @@ import transliterate as translate
 import re
 lang= 'sr'
 
+#TEXT that you dont want to translate just put bettween < >
+
 def isUnicode(chr):
     try:
         chr.encode().decode('unicode_escape')
@@ -31,8 +33,7 @@ def formatOutStr(stri):
         i+=1
     return outStr
 
-
-def convertLine(line,lang):
+def convertLine(line,lang,firstLine):
     trLine= ''
     i= 0
     while i < len(line):
@@ -44,15 +45,38 @@ def convertLine(line,lang):
 
         trLine+= line[i]
         i+=1
-    srStr= translate.translit(trLine,lang)
+    srStr= TagSafeTranslate(trLine,lang,firstLine)
+    # srStr= translate.translit(trLine,lang)
     return formatOutStr(srStr)
+
+def TagSafeTranslate(line,lang,firstLine): # 3- argument odstraniti u nekom trenutku(resava gubljenje \ na kraju reda koji sadrzo = i tag)
+    pattern= re.compile(r"<.+?>")
+    tagReg= pattern.finditer(line)
+    add= ''
+    if line[len(line)-1] is '\n': #Trebalo bi prepraviti u nekom trenutku
+        add= '\n'
+
+    outStr=''
+    iter= 0
+    tag= None
+    for tag in tagReg:
+        outStr+= translate.translit(line[iter:tag.start()],lang)
+        outStr+= line[tag.start():tag.end()]
+        iter= tag.end()
+    if tag is None:
+        return translate.translit(line,lang)
+    outStr+= translate.translit(line[iter:-1], lang)
+    if firstLine:
+        outStr+= '\\'
+    outStr+= add
+    return outStr
+
 
 infile= open('messages_sr.properties','r')
 outFile= open('testout_sr_cir_properties','w')
 
-comFlag= False #Kontrolise razmak izmedju redova
+comFlag= False #Kontrolise razmak izmedju komentara
 for line in infile:
-    print(str(line.encode()))
     if re.search(r"^#.*", line) is not None:
         outFile.write(line) #Uklanja razmak izmedju 2 linije istog komentara
         comFlag= True
@@ -60,10 +84,10 @@ for line in infile:
     pos = re.search(r"[=]", line)
     if pos is not None:
         outFile.write(line[0:pos.end()])
-        outFile.write(convertLine(line[pos.end():-1], lang))
+        outFile.write(convertLine(line[pos.end():-1], lang,True))
         outFile.write('\n')
     else:
-        outFile.write(convertLine(line,lang))
+        outFile.write(convertLine(line,lang,False))
 
 infile.close()
 outFile.close()
