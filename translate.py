@@ -13,16 +13,25 @@ def Main():
         elif sys.argv[1] == '-v':
             print("translator version: 1.0.0")
             sys.exit(0)
-        else:
-            print("\ntranslator: \n\n " + sys.argv[1] + " is not translator command. See help menu by using commands: \n\n" 
-                                                    "  [-hc] for running with ./ "
-                                                    "\n  [-hp] for runnig with python\n\n")
-            sys.exit(1)
-    else:
-        if sys.argv[3] == '-lc':
-            trans= translator.Translate(sys.argv[1], sys.argv[2], "sr")
-            trans.translate()
+
+    if sys.argv[3] == '-lc':
+            trans= translator.Translate(sys.argv[1], sys.argv[2], "Serbian")
+            trans.translate('Latin-to-Cirilic')
             print("\n\n ~ ~ ~ Succsesful translation ~ ~ ~ \n\n   Output file: " + sys.argv[2] +"\n\n")
+            sys.exit(0)
+
+    if sys.argv[3] == '-tr' and len(sys.argv) == 5:
+        if sys.argv[4] == 'english' or sys.argv[4] == 'English':
+            trans= translator.Translate(sys.argv[1],sys.argv[2], "English")
+            trans.translate("Translate-to-English")
+            print("\n\n Translated to english \n\n")
+            sys.exit(0)
+
+
+    print("\ntranslator: \n\n " + sys.argv[1] + " is not translator command. See help menu by using commands: \n\n"
+                                                "  [-hc] for running with ./ "
+                                                "\n  [-hp] for runnig with python\n\n")
+    sys.exit(1)
 
 
 if __name__ == '__main__':

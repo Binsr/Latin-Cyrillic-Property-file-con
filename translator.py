@@ -4,10 +4,10 @@ import re
 
 class Translate:
 
-    def __init__(self,fileIn, fileOut, lang):
+    def __init__(self,fileIn, fileOut, language):
         self.fileIn= fileIn
         self.fileOut= fileOut
-        self.lang= lang
+        self.language= language
 
     #TEXT in file that you dont want to translate just put bettween < >
 
@@ -40,22 +40,23 @@ class Translate:
             i+=1
         return outStr
 
-    def convertLine(self,line,lang,firstLine):
-        trLine= ''
+    def convertLine(self,line):
+        convLine= ''
         i= 0
         while i < len(line):
             if line[i] == '\\' and i+6 < len(line):
                 if self.isUnicode(line[i:i+6]) and line[i] is not line[i+1]:
-                    trLine+= line[i:i+6].encode().decode('unicode_escape')
+                    convLine+= line[i:i+6].encode().decode('unicode_escape')
                     i+= 6
                     continue
 
-            trLine+= line[i]
+            convLine+= line[i]
             i+=1
-        srStr= self.TagSafeTranslate(trLine,lang,firstLine)
-        return self.formatOutStr(srStr)
+        return convLine
+        # srStr= self.TagSafeTranslate(trLine,command,firstLine)
+        # return self.formatOutStr(srStr)
 
-    def TagSafeTranslate(self,line,lang, firstLine): # 3- argument odstraniti u nekom trenutku(resava gubljenje \ na kraju reda koji sadrzo = i tag)
+    def tagSafeTranslate(self,line,isFirstLine): # 3- argument odstraniti u nekom trenutku(resava gubljenje \ na kraju reda koji sadrzo = i tag)
         pattern= re.compile(r"<.+?>")
         tagReg= pattern.finditer(line)
         add= ''
@@ -66,18 +67,32 @@ class Translate:
         iter= 0
         tag= None
         for tag in tagReg:
-            outStr+= translate.translit(line[iter:tag.start()],self.lang)
+            outStr+= translate.translit(line[iter:tag.start()], 'sr')
             outStr+= line[tag.start():tag.end()]
             iter= tag.end()
         if tag is None:
-            return translate.translit(line,self.lang)
-        outStr+= translate.translit(line[iter:-1], self.lang)
-        if firstLine:
+            return translate.translit(line, 'sr')
+        outStr+= translate.translit(line[iter:-1], 'sr')
+        if isFirstLine:
             outStr+= '\\'
         outStr+= add
         return outStr
 
-    def translate(self):
+    def lineTranslator(self,line,command,isFirstLine):
+        convLine= self.convertLine(line)
+        transLine= convLine
+
+        if command == "Latin-to-Cirilic":
+            transLine= self.tagSafeTranslate(transLine, isFirstLine)
+
+        if command == "Translate-to-English":
+            transLine= "English"
+
+
+        return self.formatOutStr(transLine)
+
+
+    def translate(self,command):
         infile= open(self.fileIn, 'r')
         outfile= open(self.fileOut, 'w')
         for line in infile:
@@ -87,10 +102,10 @@ class Translate:
             pos = re.search(r"[=]", line)
             if pos is not None:
                 outfile.write(line[0:pos.end()])
-                outfile.write(self.convertLine(line[pos.end():-1], self.lang,True))
+                outfile.write(self.lineTranslator(line[pos.end():-1], command, True))
                 outfile.write('\n')
             else:
-                outfile.write(self.convertLine(line,self.lang,False))
+                outfile.write(self.lineTranslator(line,command, False))
 
         infile.close()
         outfile.close()
