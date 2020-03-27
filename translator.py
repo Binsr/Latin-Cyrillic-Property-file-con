@@ -56,7 +56,7 @@ class Translate:
         # srStr= self.TagSafeTranslate(trLine,command,firstLine)
         # return self.formatOutStr(srStr)
 
-    def tagSafeTranslate(self,line,isFirstLine): # 3- argument odstraniti u nekom trenutku(resava gubljenje \ na kraju reda koji sadrzo = i tag)
+    def tagSafeTranslateLatCir(self,line,isFirstLine,trFun): # 3- argument odstraniti u nekom trenutku(resava gubljenje \ na kraju reda koji sadrzo = i tag)
         pattern= re.compile(r"<.+?>")
         tagReg= pattern.finditer(line)
         add= ''
@@ -67,29 +67,38 @@ class Translate:
         iter= 0
         tag= None
         for tag in tagReg:
-            outStr+= translate.translit(line[iter:tag.start()], 'sr')
+            outStr+= trFun(line[iter:tag.start()])
             outStr+= line[tag.start():tag.end()]
             iter= tag.end()
         if tag is None:
-            return translate.translit(line, 'sr')
-        outStr+= translate.translit(line[iter:-1], 'sr')
+            return trFun(line)
+        outStr+= trFun(line[iter:-1])
         if isFirstLine:
             outStr+= '\\'
         outStr+= add
         return outStr
+
+
+    def latinCir(self,stri):
+        return translate.translit(stri, 'sr')
+
+    def toEnglish(self,stri):
+        return 'English'
 
     def lineTranslator(self,line,command,isFirstLine):
         convLine= self.convertLine(line)
         transLine= convLine
 
         if command == "Latin-to-Cirilic":
-            transLine= self.tagSafeTranslate(transLine, isFirstLine)
+            trFun= self.latinCir
+            transLine= self.tagSafeTranslateLatCir(transLine, isFirstLine,trFun)
 
         if command == "Translate-to-English":
-            transLine= "English"
+            trFun= self.toEnglish
+            transLine= self.tagSafeTranslateLatCir(transLine,isFirstLine,trFun)
 
-
-        return self.formatOutStr(transLine)
+        return transLine
+        # return self.formatOutStr(transLine)
 
 
     def translate(self,command):
